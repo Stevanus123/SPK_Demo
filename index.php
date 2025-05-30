@@ -6,15 +6,16 @@ class SAWDecisionSupport
 
     // Default weights if none provided
     private $defaultWeights = [
-        'Engine_Size' => 2,   // Weight for engine size (lower is better)
-        'Mileage' => 2,       // Weight for mileage (lower is better)
-        'Doors' => 1,         // Weight for number of doors
-        'Owner_Count' => 2,   // Weight for owner count (lower is better)
-        'Price' => 3          // Weight for price (lower is better)
+        'Year' => 2,        // makin banyak makin baik
+        'Engine_Size' => 2, // makin dikit makin baik
+        'Mileage' => 1,     // makin dikit main baik
+        'Doors' => 1,       // makin banyak makin baik
+        'Owner_Count' => 2, // makin dikit makin baik
+        'Price' => 2        // makin dikit makin baik
     ];
 
 
-    // ssaat pertama kali dieksekusi
+    // saat pertama kali dieksekusi
     public function __construct($csvFile, $userWeights = [])
     {
         // Read CSV file
@@ -71,6 +72,7 @@ class SAWDecisionSupport
 
         // min max dari tiap kriteria
         $maxMin = [
+            'Year' => ['max' => PHP_FLOAT_MIN, 'min' => PHP_FLOAT_MAX],
             'Engine_Size' => ['max' => PHP_FLOAT_MIN, 'min' => PHP_FLOAT_MAX],
             'Mileage' => ['max' => PHP_FLOAT_MIN, 'min' => PHP_FLOAT_MAX],
             'Doors' => ['max' => PHP_FLOAT_MIN, 'min' => PHP_FLOAT_MAX],
@@ -93,6 +95,7 @@ class SAWDecisionSupport
 
             // Benefit criteria (higher is better): Doors
             $normalizedCar['Doors_Norm'] = $maxMin['Doors']['max'] > 0 ? ($car['Doors'] / $maxMin['Doors']['max']) : 0;
+            $normalizedCar['Year_Norm'] = $maxMin['Year']['max'] > 0 ? ($car['Year'] / $maxMin['Year']['max']) : 0;
 
             // Cost criteria (lower is better): Engine_Size, Mileage, Owner_Count, Price
             $normalizedCar['Engine_Size_Norm'] = $car['Engine_Size'] > 0 ? ($maxMin['Engine_Size']['min'] / $car['Engine_Size']) : 0;
@@ -113,6 +116,7 @@ class SAWDecisionSupport
 
         foreach ($normalized as $index => $car) {
             $preference =
+                ($car['Year'] * $this->bobot['Year']) +
                 ($car['Engine_Size_Norm'] * $this->bobot['Engine_Size']) +
                 ($car['Mileage_Norm'] * $this->bobot['Mileage']) +
                 ($car['Doors_Norm'] * $this->bobot['Doors']) +
@@ -138,11 +142,12 @@ class SAWDecisionSupport
 $results = null;
 $error = null;
 $currentWeights = [
+    'Year' => 2,
     'Engine_Size' => 2,
-    'Mileage' => 2,
+    'Mileage' => 1,
     'Doors' => 1,
     'Owner_Count' => 2,
-    'Price' => 3
+    'Price' => 2
 ];
 
 // Persist uploaded file and weights across pagination using session
@@ -518,6 +523,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="row">
                                         <div class="col-md-4 mb-3">
                                             <div class="weight-item">
+                                                <label for="year_weight" class="form-label">
+                                                    Year <span class="badge badge-benefit">Benefit</span>
+                                                </label>
+                                                <div class="weight-slider">
+                                                    <input type="range" class="form-range weight-range" min="0" max="10" step="0.1"
+                                                        id="year_weight" name="weights[Year]"
+                                                        value="<?php echo $currentWeights['Year']; ?>">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>0</span>
+                                                        <span class="weight-value" id="year_value"><?php echo $currentWeights['Year']; ?></span>
+                                                        <span>10</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <div class="weight-item">
                                                 <label for="engine_size_weight" class="form-label">
                                                     Engine Size <span class="badge badge-cost">Cost</span>
                                                 </label>
@@ -615,6 +638,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 </div>
                                             </div>
                                         </div>
+
+
                                     </div>
                                 </div>
                             </div>
@@ -656,6 +681,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="col-md-6">
                                     <ul class="list-group">
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Engine Size <span class="badge badge-benefit">Benefit</span>
+                                            <span class="badge bg-primary rounded-pill"><?php echo number_format($currentWeights['Year'] * 10, 0); ?>%</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
                                             Engine Size <span class="badge badge-cost">Cost</span>
                                             <span class="badge bg-primary rounded-pill"><?php echo number_format($currentWeights['Engine_Size'] * 10, 0); ?>%</span>
                                         </li>
@@ -663,14 +692,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             Mileage <span class="badge badge-cost">Cost</span>
                                             <span class="badge bg-primary rounded-pill"><?php echo number_format($currentWeights['Mileage'] * 10, 0); ?>%</span>
                                         </li>
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            Doors <span class="badge badge-benefit">Benefit</span>
-                                            <span class="badge bg-primary rounded-pill"><?php echo number_format($currentWeights['Doors'] * 10, 0); ?>%</span>
-                                        </li>
                                     </ul>
                                 </div>
                                 <div class="col-md-6">
                                     <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            Doors <span class="badge badge-benefit">Benefit</span>
+                                            <span class="badge bg-primary rounded-pill"><?php echo number_format($currentWeights['Doors'] * 10, 0); ?>%</span>
+                                        </li>
                                         <li class="list-group-item d-flex justify-content-between align-items-center">
                                             Owner Count <span class="badge badge-cost">Cost</span>
                                             <span class="badge bg-primary rounded-pill"><?php echo number_format($currentWeights['Owner_Count'] * 10, 0); ?>%</span>
@@ -713,6 +742,115 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- Filter section above the table -->
+                                    <tr>
+                                        <td colspan="12">
+                                            <form method="get" class="row g-2 align-items-center mb-2">
+                                                <div class="col-md-2">
+                                                    <select name="brand" class="form-select" onchange="this.form.submit()">
+                                                        <option value="">All Brands</option>
+                                                        <?php
+                                                        // Get unique brands from all results
+                                                        $brands = array_unique(array_map(function ($r) {
+                                                            return $r['car']['Brand'];
+                                                        }, $results));
+                                                        sort($brands);
+                                                        foreach ($brands as $brand) {
+                                                            $selected = (isset($_GET['brand']) && $_GET['brand'] === $brand) ? 'selected' : '';
+                                                            echo "<option value=\"" . htmlspecialchars($brand) . "\" $selected>" . htmlspecialchars($brand) . "</option>";
+                                                        }
+                                                        ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <select name="model" class="form-select" onchange="this.form.submit()">
+                                                        <option value="">All Models</option>
+                                                        <?php
+                                                        // Filter models by selected brand if any
+                                                        $models = array_unique(array_map(function ($r) {
+                                                            return $r['car']['Model'];
+                                                        }, array_filter($results, function ($r) {
+                                                            return empty($_GET['brand']) || $r['car']['Brand'] === $_GET['brand'];
+                                                        })));
+                                                        sort($models);
+                                                        foreach ($models as $model) {
+                                                            $selected = (isset($_GET['model']) && $_GET['model'] === $model) ? 'selected' : '';
+                                                            echo "<option value=\"" . htmlspecialchars($model) . "\" $selected>" . htmlspecialchars($model) . "</option>";
+                                                        }
+                                                        ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <select name="fuel_type" class="form-select" onchange="this.form.submit()">
+                                                        <option value="">All Fuel Types</option>
+                                                        <?php
+                                                        $fuel_types = array_unique(array_map(function ($r) {
+                                                            return $r['car']['Fuel_Type'];
+                                                        }, $results));
+                                                        sort($fuel_types);
+                                                        foreach ($fuel_types as $fuel) {
+                                                            $selected = (isset($_GET['fuel_type']) && $_GET['fuel_type'] === $fuel) ? 'selected' : '';
+                                                            echo "<option value=\"" . htmlspecialchars($fuel) . "\" $selected>" . htmlspecialchars($fuel) . "</option>";
+                                                        }
+                                                        ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <select name="transmission" class="form-select" onchange="this.form.submit()">
+                                                        <option value="">All Transmissions</option>
+                                                        <?php
+                                                        $transmissions = array_unique(array_map(function ($r) {
+                                                            return $r['car']['Transmission'];
+                                                        }, $results));
+                                                        sort($transmissions);
+                                                        foreach ($transmissions as $trans) {
+                                                            $selected = (isset($_GET['transmission']) && $_GET['transmission'] === $trans) ? 'selected' : '';
+                                                            echo "<option value=\"" . htmlspecialchars($trans) . "\" $selected>" . htmlspecialchars($trans) . "</option>";
+                                                        }
+                                                        ?>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-filter"></i> Filter</button>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <a href="index.php" class="btn btn-outline-secondary w-100"><i class="fas fa-times"></i> Reset</a>
+                                                </div>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                    // Filtering logic for paginatedResults
+                                    $filteredResults = $results;
+                                    if (!empty($_GET['brand'])) {
+                                        $filteredResults = array_filter($filteredResults, function ($r) {
+                                            return $r['car']['Brand'] === $_GET['brand'];
+                                        });
+                                    }
+                                    if (!empty($_GET['model'])) {
+                                        $filteredResults = array_filter($filteredResults, function ($r) {
+                                            return $r['car']['Model'] === $_GET['model'];
+                                        });
+                                    }
+                                    if (!empty($_GET['fuel_type'])) {
+                                        $filteredResults = array_filter($filteredResults, function ($r) {
+                                            return $r['car']['Fuel_Type'] === $_GET['fuel_type'];
+                                        });
+                                    }
+                                    if (!empty($_GET['transmission'])) {
+                                        $filteredResults = array_filter($filteredResults, function ($r) {
+                                            return $r['car']['Transmission'] === $_GET['transmission'];
+                                        });
+                                    }
+                                    $filteredResults = array_values($filteredResults);
+
+                                    // Update pagination based on filtered results
+                                    $totalResults = count($filteredResults);
+                                    $totalPages = ceil($totalResults / $perPage);
+                                    $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+                                    $start = ($page - 1) * $perPage;
+                                    $paginatedResults = array_slice($filteredResults, $start, $perPage);
+                                    ?>
                                     <?php foreach ($paginatedResults as $rank => $result):
                                         $globalRank = $start + $rank;
                                         // Trophy icons for top 3
@@ -751,29 +889,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </tbody>
                             </table>
 
+                            <?php
+                            $filterParams = [];
+                            if (!empty($_GET['brand'])) $filterParams['brand'] = $_GET['brand'];
+                            if (!empty($_GET['model'])) $filterParams['model'] = $_GET['model'];
+                            if (!empty($_GET['fuel_type'])) $filterParams['fuel_type'] = $_GET['fuel_type'];
+                            if (!empty($_GET['transmission'])) $filterParams['transmission'] = $_GET['transmission'];
+                            $filterQuery = http_build_query($filterParams);
+                            function pageUrl($page, $filterQuery)
+                            {
+                                $url = '?page=' . $page;
+                                if ($filterQuery) $url .= '&' . $filterQuery;
+                                return $url;
+                            }
+                            ?>
+
                             <!-- Pagination controls -->
                             <nav aria-label="Ranking pagination">
                                 <ul class="pagination justify-content-center">
                                     <li class="page-item<?php if ($page <= 1) echo ' disabled'; ?>">
-                                        <a class="page-link" href="?page=1" tabindex="-1">&laquo; First</a>
+                                        <a class="page-link" href="<?= pageUrl(1, $filterQuery) ?>" tabindex="-1">&laquo; First</a>
                                     </li>
                                     <li class="page-item<?php if ($page <= 1) echo ' disabled'; ?>">
-                                        <a class="page-link" href="?page=<?php echo max(1, $page - 1); ?>" tabindex="-1">&lsaquo; Prev</a>
+                                        <a class="page-link" href="?page=<?= pageUrl(max(1, $page - 1), $filterQuery); ?>" tabindex="-1">&lsaquo; Prev</a>
                                     </li>
                                     <?php
+                                    // Build query string for filters to append to pagination links
                                     // Show up to 5 page numbers
                                     $startPage = max(1, $page - 2);
                                     $endPage = min($totalPages, $page + 2);
                                     for ($i = $startPage; $i <= $endPage; $i++): ?>
                                         <li class="page-item<?php if ($i == $page) echo ' active'; ?>">
-                                            <a class="page-link" href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                            <a class="page-link" href="<?php echo pageUrl($i, $filterQuery); ?>"><?php echo $i; ?></a>
                                         </li>
                                     <?php endfor; ?>
                                     <li class="page-item<?php if ($page >= $totalPages) echo ' disabled'; ?>">
-                                        <a class="page-link" href="?page=<?php echo min($totalPages, $page + 1); ?>">Next &rsaquo;</a>
+                                        <a class="page-link" href="<?php echo pageUrl(min($totalPages, $page + 1), $filterQuery); ?>">Next &rsaquo;</a>
                                     </li>
                                     <li class="page-item<?php if ($page >= $totalPages) echo ' disabled'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $totalPages; ?>">Last &raquo;</a>
+                                        <a class="page-link" href="<?php echo pageUrl($totalPages, $filterQuery); ?>">Last &raquo;</a>
                                     </li>
                                 </ul>
                             </nav>
@@ -795,6 +949,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Map input id to value span id
             const valueSpans = {
+                'year_weight': document.getElementById('year_value'),
                 'engine_size_weight': document.getElementById('engine_size_value'),
                 'mileage_weight': document.getElementById('mileage_value'),
                 'doors_weight': document.getElementById('doors_value'),
