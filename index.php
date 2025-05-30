@@ -723,7 +723,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $start = ($page - 1) * $perPage;
                             $paginatedResults = array_slice($results, $start, $perPage);
                             ?>
-
+                            <table style="width: 100%;">
+                                <!-- Filter section above the table -->
+                                <tr>
+                                    <td colspan="12">
+                                        <form method="get" class="row g-2 align-items-center mb-2">
+                                            <div class="col-md-2">
+                                                <select name="brand" class="form-select" onchange="this.form.submit()">
+                                                    <option value="">All Brands</option>
+                                                    <?php
+                                                    // Get unique brands from all results
+                                                    $brands = array_unique(array_map(function ($r) {
+                                                        return $r['car']['Brand'];
+                                                    }, $results));
+                                                    sort($brands);
+                                                    foreach ($brands as $brand) {
+                                                        $selected = (isset($_GET['brand']) && $_GET['brand'] === $brand) ? 'selected' : '';
+                                                        echo "<option value=\"" . htmlspecialchars($brand) . "\" $selected>" . htmlspecialchars($brand) . "</option>";
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <select name="model" class="form-select" onchange="this.form.submit()">
+                                                    <option value="">All Models</option>
+                                                    <?php
+                                                    // Filter models by selected brand if any
+                                                    $models = array_unique(array_map(function ($r) {
+                                                        return $r['car']['Model'];
+                                                    }, array_filter($results, function ($r) {
+                                                        return empty($_GET['brand']) || $r['car']['Brand'] === $_GET['brand'];
+                                                    })));
+                                                    sort($models);
+                                                    foreach ($models as $model) {
+                                                        $selected = (isset($_GET['model']) && $_GET['model'] === $model) ? 'selected' : '';
+                                                        echo "<option value=\"" . htmlspecialchars($model) . "\" $selected>" . htmlspecialchars($model) . "</option>";
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <select name="fuel_type" class="form-select" onchange="this.form.submit()">
+                                                    <option value="">All Fuel Types</option>
+                                                    <?php
+                                                    $fuel_types = array_unique(array_map(function ($r) {
+                                                        return $r['car']['Fuel_Type'];
+                                                    }, $results));
+                                                    sort($fuel_types);
+                                                    foreach ($fuel_types as $fuel) {
+                                                        $selected = (isset($_GET['fuel_type']) && $_GET['fuel_type'] === $fuel) ? 'selected' : '';
+                                                        echo "<option value=\"" . htmlspecialchars($fuel) . "\" $selected>" . htmlspecialchars($fuel) . "</option>";
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <select name="transmission" class="form-select" onchange="this.form.submit()">
+                                                    <option value="">All Transmissions</option>
+                                                    <?php
+                                                    $transmissions = array_unique(array_map(function ($r) {
+                                                        return $r['car']['Transmission'];
+                                                    }, $results));
+                                                    sort($transmissions);
+                                                    foreach ($transmissions as $trans) {
+                                                        $selected = (isset($_GET['transmission']) && $_GET['transmission'] === $trans) ? 'selected' : '';
+                                                        echo "<option value=\"" . htmlspecialchars($trans) . "\" $selected>" . htmlspecialchars($trans) . "</option>";
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <a href="index.php" class="btn btn-outline-secondary w-100"><i class="fas fa-times"></i> Reset</a>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </table>
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
@@ -742,83 +817,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <!-- Filter section above the table -->
-                                    <tr>
-                                        <td colspan="12">
-                                            <form method="get" class="row g-2 align-items-center mb-2">
-                                                <div class="col-md-2">
-                                                    <select name="brand" class="form-select" onchange="this.form.submit()">
-                                                        <option value="">All Brands</option>
-                                                        <?php
-                                                        // Get unique brands from all results
-                                                        $brands = array_unique(array_map(function ($r) {
-                                                            return $r['car']['Brand'];
-                                                        }, $results));
-                                                        sort($brands);
-                                                        foreach ($brands as $brand) {
-                                                            $selected = (isset($_GET['brand']) && $_GET['brand'] === $brand) ? 'selected' : '';
-                                                            echo "<option value=\"" . htmlspecialchars($brand) . "\" $selected>" . htmlspecialchars($brand) . "</option>";
-                                                        }
-                                                        ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <select name="model" class="form-select" onchange="this.form.submit()">
-                                                        <option value="">All Models</option>
-                                                        <?php
-                                                        // Filter models by selected brand if any
-                                                        $models = array_unique(array_map(function ($r) {
-                                                            return $r['car']['Model'];
-                                                        }, array_filter($results, function ($r) {
-                                                            return empty($_GET['brand']) || $r['car']['Brand'] === $_GET['brand'];
-                                                        })));
-                                                        sort($models);
-                                                        foreach ($models as $model) {
-                                                            $selected = (isset($_GET['model']) && $_GET['model'] === $model) ? 'selected' : '';
-                                                            echo "<option value=\"" . htmlspecialchars($model) . "\" $selected>" . htmlspecialchars($model) . "</option>";
-                                                        }
-                                                        ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <select name="fuel_type" class="form-select" onchange="this.form.submit()">
-                                                        <option value="">All Fuel Types</option>
-                                                        <?php
-                                                        $fuel_types = array_unique(array_map(function ($r) {
-                                                            return $r['car']['Fuel_Type'];
-                                                        }, $results));
-                                                        sort($fuel_types);
-                                                        foreach ($fuel_types as $fuel) {
-                                                            $selected = (isset($_GET['fuel_type']) && $_GET['fuel_type'] === $fuel) ? 'selected' : '';
-                                                            echo "<option value=\"" . htmlspecialchars($fuel) . "\" $selected>" . htmlspecialchars($fuel) . "</option>";
-                                                        }
-                                                        ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <select name="transmission" class="form-select" onchange="this.form.submit()">
-                                                        <option value="">All Transmissions</option>
-                                                        <?php
-                                                        $transmissions = array_unique(array_map(function ($r) {
-                                                            return $r['car']['Transmission'];
-                                                        }, $results));
-                                                        sort($transmissions);
-                                                        foreach ($transmissions as $trans) {
-                                                            $selected = (isset($_GET['transmission']) && $_GET['transmission'] === $trans) ? 'selected' : '';
-                                                            echo "<option value=\"" . htmlspecialchars($trans) . "\" $selected>" . htmlspecialchars($trans) . "</option>";
-                                                        }
-                                                        ?>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fas fa-filter"></i> Filter</button>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <a href="index.php" class="btn btn-outline-secondary w-100"><i class="fas fa-times"></i> Reset</a>
-                                                </div>
-                                            </form>
-                                        </td>
-                                    </tr>
                                     <?php
                                     // Filtering logic for paginatedResults
                                     $filteredResults = $results;
